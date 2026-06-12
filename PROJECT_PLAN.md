@@ -172,6 +172,7 @@ Phase 1 (Foundation)  →  Phase 2 (Pipeline)  →  Phase 3 (API)  →  Phase 4 
 2. **Phase 2** — Core pipeline; validate with real NBA questions.
 3. **Phase 3** — Thin wrapper once pipeline is reliable.
 4. **Phase 4** — Polish for demos and stakeholders.
+5. **Phase 5** — Ask potential customers for trial run (NBA Twitter accounts (ie. Shams), ESPN, friends).
 
 ---
 
