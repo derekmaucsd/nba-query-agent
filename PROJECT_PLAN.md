@@ -34,7 +34,7 @@ Natural-language NBA analytics agent: plain-English questions → SQL → valida
 - [ ] Evaluate the [NBA API](https://github.com/swar/nba_api) package
 - [ ] Try datasets on [Kaggle](https://www.kaggle.com/datasets?search=nba)
 
-### 3. Format This Doc
+### 3. Format This Doc ✅
 
 **Goal:** Publish a clear, shareable project plan in the repository.
 
