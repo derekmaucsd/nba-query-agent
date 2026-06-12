@@ -12,9 +12,9 @@ Natural-language NBA analytics agent: plain-English questions → SQL → valida
 
 | # | Deliverable | Owner(s) | Due |
 |---|-------------|----------|-----|
-| 1 | [Development environment](#1-development-environment) | Derek, Darren | **Sat, Jun 13** |
+| 1 | [Development environment](#1-development-environment) | Derek, Darren ✅ | **Sat, Jun 13** |
 | 2 | [NBA data source](#2-nba-data-source) | Darren | **Fri, Jun 12** |
-| 3 | [Format this doc](#3-format-this-doc) | Darren | **Fri, Jun 12** |
+| 3 | [Format this doc](#3-format-this-doc) | Darren ✅ | **Fri, Jun 12** |
 | 4 | [SQL proof of concept + schema](#4-sql-proof-of-concept--schema) | Derek | **Wed, Jun 17** |
 
 ### 1. Development Environment
