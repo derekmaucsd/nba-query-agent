@@ -1,14 +1,22 @@
-- coding + AI development environment
+- coding + AI development environment 
 - (what do we want to use? we should use the same env)
+- vscode + claude code
+- Derek Darren 6/13 saturday
 
 - find an up-to-date, easy access, lots of data NBA DB to use
 - maybe settle for something less up-to-date as a demo
 - is there live NBA data we can access?
 - investigate NBA API Package
+- kaggle
+- Darren, 6/12 Friday
+
+- format this doc
+- darren, 6/12 Friday
 
 - make a successful SQL Query to the NBA Database
 
 - Write a schema description for the agent
+- derek, 6/17 wed
 
 - Core agent pipeline
 
@@ -42,6 +50,7 @@ Phase 4 is where it becomes something you can actually show people.
 Target Demos:
 
 - single local chat, single question with NBA chat agent with possibly limited DB functionality
+- 
 - support follow up questions that uses context within that conversation
 - expand DB to live/very recent data
 - can handle multiple live chats
