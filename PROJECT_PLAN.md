@@ -157,6 +157,8 @@ Claude artifact with:
 | **Demo 2** | Follow-up questions with conversation context within a single session |
 | **Demo 3** | Expand DB to live or very recent data |
 | **Demo 4** | Multiple concurrent live chat sessions |
+| **Demo 5** | Allow to ask for visuals (ie. graph, diagram) generation |
+| **Demo 6** | Ask potential customers for trial run (NBA Twitter accounts (ie. Shams), ESPN, friends). |
 
 ---
 
@@ -172,7 +174,6 @@ Phase 1 (Foundation)  →  Phase 2 (Pipeline)  →  Phase 3 (API)  →  Phase 4 
 2. **Phase 2** — Core pipeline; validate with real NBA questions.
 3. **Phase 3** — Thin wrapper once pipeline is reliable.
 4. **Phase 4** — Polish for demos and stakeholders.
-5. **Phase 5** — Ask potential customers for trial run (NBA Twitter accounts (ie. Shams), ESPN, friends).
 
 ---
 
