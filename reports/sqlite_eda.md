@@ -6,28 +6,30 @@ Tables: 16
 
 ## Table Summary
 
-| table | rows | columns | foreign_keys | indexes |
-| --- | ---: | ---: | ---: | ---: |
-| `common_player_info` | 3,632 | 33 | 0 | 0 |
-| `draft_combine_stats` | 1,633 | 47 | 0 | 0 |
-| `draft_history` | 8,257 | 14 | 0 | 0 |
-| `game` | 65,698 | 55 | 0 | 0 |
-| `game_info` | 58,053 | 4 | 0 | 0 |
-| `game_summary` | 58,110 | 14 | 0 | 0 |
-| `inactive_players` | 110,191 | 9 | 0 | 0 |
-| `line_score` | 58,053 | 43 | 0 | 0 |
-| `officials` | 70,971 | 5 | 0 | 0 |
-| `other_stats` | 28,271 | 26 | 0 | 0 |
-| `play_by_play` | 13,592,899 | 34 | 0 | 0 |
-| `player` | 4,815 | 5 | 0 | 0 |
-| `team` | 30 | 7 | 0 | 0 |
-| `team_details` | 27 | 14 | 0 | 0 |
-| `team_history` | 50 | 5 | 0 | 0 |
-| `team_info_common` | 0 | 26 | 0 | 0 |
+| table | inferred grain | rows | columns | foreign_keys | indexes |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `common_player_info` | One row per player profile (`person_id`). | 3,632 | 33 | 0 | 0 |
+| `draft_combine_stats` | One row per player at an NBA Draft Combine season (`season`, `player_id` / player name). | 1,633 | 47 | 0 | 0 |
+| `draft_history` | One row per drafted player selection (`season`, `round_number`, `overall_pick`, `person_id`). | 8,257 | 14 | 0 | 0 |
+| `game` | One row per game, with home and away team box-score fields on the same row (`game_id`). | 65,698 | 55 | 0 | 0 |
+| `game_info` | One row per game with attendance and duration metadata (`game_id`). | 58,053 | 4 | 0 | 0 |
+| `game_summary` | One row per game status/summary record (`game_id`). | 58,110 | 14 | 0 | 0 |
+| `inactive_players` | One row per inactive player for a game (`game_id`, `player_id`). | 110,191 | 9 | 0 | 0 |
+| `line_score` | One row per game line score, with home and away quarter scoring on the same row (`game_id`). | 58,053 | 43 | 0 | 0 |
+| `officials` | One row per official assigned to a game (`game_id`, `official_id`). | 70,971 | 5 | 0 | 0 |
+| `other_stats` | One row per game with extra home and away team stats on the same row (`game_id`). | 28,271 | 26 | 0 | 0 |
+| `play_by_play` | One row per play/event in a game (`game_id`, `eventnum`). | 13,592,899 | 34 | 0 | 0 |
+| `player` | One row per player identity (`id`). | 4,815 | 5 | 0 | 0 |
+| `team` | One row per current NBA team (`id`). | 30 | 7 | 0 | 0 |
+| `team_details` | One row per team details record (`team_id`). | 27 | 14 | 0 | 0 |
+| `team_history` | One row per team identity era/history segment (`team_id`, `year_founded`). | 50 | 5 | 0 | 0 |
+| `team_info_common` | Intended grain appears to be one team-season snapshot (`team_id`, `season_year`), but this table is empty in the current database. | 0 | 26 | 0 | 0 |
 
 ## Tables
 
 ### `common_player_info`
+
+Inferred grain: One row per player profile (`person_id`).
 
 Rows: 3,632
 
@@ -76,6 +78,8 @@ Sample rows (3):
 | 76003 | Kareem | Abdul-Jabbar | Kareem Abdul-Jabbar | Abdul-Jabbar, Kareem | K. Abdul-Jabbar | kareem-abdul-jabbar | 1947-04-16 00:00:00 | UCLA | USA | UCLA/USA | 7-2 | 225 | 20.0 | 33 | Center | Inactive | N | 1610612747 | Lakers | LAL | lakers | Los Angeles | HISTADD_kareem_abdul-jabbar | 1969.0 | 1988.0 | N | Y | Y | 1969 | 1 | 1 | Y |
 
 ### `draft_combine_stats`
+
+Inferred grain: One row per player at an NBA Draft Combine season (`season`, `player_id` / player name).
 
 Rows: 1,633
 
@@ -139,6 +143,8 @@ Sample rows (3):
 
 ### `draft_history`
 
+Inferred grain: One row per drafted player selection (`season`, `round_number`, `overall_pick`, `person_id`).
+
 Rows: 8,257
 
 | column | type | nullable | primary_key | default |
@@ -167,6 +173,8 @@ Sample rows (3):
 | 76649 | Eddie Ehlers | 1947 | 1 | 3 | 3 | Draft | 1610612738 | Boston | Celtics | BOS | Purdue | College/University | 1 |
 
 ### `game`
+
+Inferred grain: One row per game, with home and away team box-score fields on the same row (`game_id`).
 
 Rows: 65,698
 
@@ -238,6 +246,8 @@ Sample rows (3):
 
 ### `game_info`
 
+Inferred grain: One row per game with attendance and duration metadata (`game_id`).
+
 Rows: 58,053
 
 | column | type | nullable | primary_key | default |
@@ -256,6 +266,8 @@ Sample rows (3):
 | 0024600002 | 1946-11-02 00:00:00 |  |  |
 
 ### `game_summary`
+
+Inferred grain: One row per game status/summary record (`game_id`).
 
 Rows: 58,110
 
@@ -286,6 +298,8 @@ Sample rows (3):
 
 ### `inactive_players`
 
+Inferred grain: One row per inactive player for a game (`game_id`, `player_id`).
+
 Rows: 110,191
 
 | column | type | nullable | primary_key | default |
@@ -309,6 +323,8 @@ Sample rows (3):
 | 0029600132 | 120 | Steven | Smith | 8 | 1610612737 | Atlanta | Hawks | ATL |
 
 ### `line_score`
+
+Inferred grain: One row per game line score, with home and away quarter scoring on the same row (`game_id`).
 
 Rows: 58,053
 
@@ -368,6 +384,8 @@ Sample rows (3):
 
 ### `officials`
 
+Inferred grain: One row per official assigned to a game (`game_id`, `official_id`).
+
 Rows: 70,971
 
 | column | type | nullable | primary_key | default |
@@ -387,6 +405,8 @@ Sample rows (3):
 | 0029600059 | 1153 | Joe | Crawford | 17 |
 
 ### `other_stats`
+
+Inferred grain: One row per game with extra home and away team stats on the same row (`game_id`).
 
 Rows: 28,271
 
@@ -428,6 +448,8 @@ Sample rows (3):
 | 0029600002 | 00 | 1610612739 | CLE | Cleveland | 36 | 14 | 6 | 20 | 1 | 1 | 0 | 15 | 5 |  | 1610612751 | NJN | New Jersey | 26 | 16 | 4 | 2 | 1 | 22 | 12 |  |
 
 ### `play_by_play`
+
+Inferred grain: One row per play/event in a game (`game_id`, `eventnum`).
 
 Rows: 13,592,899
 
@@ -478,6 +500,8 @@ Sample rows (3):
 
 ### `player`
 
+Inferred grain: One row per player identity (`id`).
+
 Rows: 4,815
 
 | column | type | nullable | primary_key | default |
@@ -497,6 +521,8 @@ Sample rows (3):
 | 76003 | Kareem Abdul-Jabbar | Kareem | Abdul-Jabbar | 0 |
 
 ### `team`
+
+Inferred grain: One row per current NBA team (`id`).
 
 Rows: 30
 
@@ -519,6 +545,8 @@ Sample rows (3):
 | 1610612739 | Cleveland Cavaliers | CLE | Cavaliers | Cleveland | Ohio | 1970.0 |
 
 ### `team_details`
+
+Inferred grain: One row per team details record (`team_id`).
 
 Rows: 27
 
@@ -549,6 +577,8 @@ Sample rows (3):
 
 ### `team_history`
 
+Inferred grain: One row per team identity era/history segment (`team_id`, `year_founded`).
+
 Rows: 50
 
 | column | type | nullable | primary_key | default |
@@ -568,6 +598,8 @@ Sample rows (3):
 | 1610612737 | Milwaukee | Hawks | 1951 | 1954 |
 
 ### `team_info_common`
+
+Inferred grain: Intended grain appears to be one team-season snapshot (`team_id`, `season_year`), but this table is empty in the current database.
 
 Rows: 0
 

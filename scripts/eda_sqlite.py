@@ -3,6 +3,26 @@ import sqlite3
 from pathlib import Path
 
 
+GRAIN_NOTES = {
+    "common_player_info": "One row per player profile (`person_id`).",
+    "draft_combine_stats": "One row per player at an NBA Draft Combine season (`season`, `player_id` / player name).",
+    "draft_history": "One row per drafted player selection (`season`, `round_number`, `overall_pick`, `person_id`).",
+    "game": "One row per game, with home and away team box-score fields on the same row (`game_id`).",
+    "game_info": "One row per game with attendance and duration metadata (`game_id`).",
+    "game_summary": "One row per game status/summary record (`game_id`).",
+    "inactive_players": "One row per inactive player for a game (`game_id`, `player_id`).",
+    "line_score": "One row per game line score, with home and away quarter scoring on the same row (`game_id`).",
+    "officials": "One row per official assigned to a game (`game_id`, `official_id`).",
+    "other_stats": "One row per game with extra home and away team stats on the same row (`game_id`).",
+    "play_by_play": "One row per play/event in a game (`game_id`, `eventnum`).",
+    "player": "One row per player identity (`id`).",
+    "team": "One row per current NBA team (`id`).",
+    "team_details": "One row per team details record (`team_id`).",
+    "team_history": "One row per team identity era/history segment (`team_id`, `year_founded`).",
+    "team_info_common": "Intended grain appears to be one team-season snapshot (`team_id`, `season_year`), but this table is empty in the current database.",
+}
+
+
 def quote_ident(identifier: str) -> str:
     return '"' + identifier.replace('"', '""') + '"'
 
@@ -36,6 +56,10 @@ def markdown_table(columns, rows) -> str:
     for row in rendered_rows:
         lines.append("| " + " | ".join(row) + " |")
     return "\n".join(lines)
+
+
+def escape_markdown_cell(value) -> str:
+    return str(value).replace("|", "\\|")
 
 
 def table_info(conn: sqlite3.Connection, table_name: str):
@@ -73,8 +97,8 @@ def analyze_database(db_path: Path, sample_rows: int) -> str:
             "",
             "## Table Summary",
             "",
-            "| table | rows | columns | foreign_keys | indexes |",
-            "| --- | ---: | ---: | ---: | ---: |",
+            "| table | inferred grain | rows | columns | foreign_keys | indexes |",
+            "| --- | --- | ---: | ---: | ---: | ---: |",
         ]
 
         summaries = []
@@ -85,8 +109,9 @@ def analyze_database(db_path: Path, sample_rows: int) -> str:
             fks = foreign_keys(conn, table_name)
             idxs = indexes(conn, table_name)
             summaries.append((table_name, row_count, columns, fks, idxs))
+            grain = escape_markdown_cell(GRAIN_NOTES.get(table_name, "Not inferred."))
             lines.append(
-                f"| `{table_name}` | {row_count:,} | {len(columns)} | {len(fks)} | {len(idxs)} |"
+                f"| `{table_name}` | {grain} | {row_count:,} | {len(columns)} | {len(fks)} | {len(idxs)} |"
             )
 
         lines.extend(["", "## Tables", ""])
@@ -95,6 +120,8 @@ def analyze_database(db_path: Path, sample_rows: int) -> str:
             qname = quote_ident(table_name)
             lines.extend([
                 f"### `{table_name}`",
+                "",
+                f"Inferred grain: {GRAIN_NOTES.get(table_name, 'Not inferred.')}",
                 "",
                 f"Rows: {row_count:,}",
                 "",
