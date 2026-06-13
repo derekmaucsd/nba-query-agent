@@ -25,6 +25,51 @@ Tables: 16
 | `team_history` | One row per team identity era/history segment (`team_id`, `year_founded`). | 50 | 5 | 0 | 0 |
 | `team_info_common` | Intended grain appears to be one team-season snapshot (`team_id`, `season_year`), but this table is empty in the current database. | 0 | 26 | 0 | 0 |
 
+## Data Recency
+
+The database is current through the 2022-23 NBA season at the game level. Game-level tables include the 2023 NBA Finals through June 12, 2023, while `play_by_play` currently stops at June 9, 2023.
+
+### Game Coverage
+
+| season_type | rows | games | min_date | max_date | min_season_id | max_season_id |
+| --- | ---: | ---: | --- | --- | --- | --- |
+| Playoffs | 3,842 | 3,842 | 1947-04-02 00:00:00 | 2023-06-12 00:00:00 | 41946 | 42022 |
+| Regular Season | 60,192 | 60,192 | 1946-11-01 00:00:00 | 2023-04-09 00:00:00 | 21946 | 22022 |
+| All-Star | 63 | 63 | 1951-03-02 00:00:00 | 2023-02-19 00:00:00 | 31950 | 32022 |
+| All Star | 65 | 65 | 1951-03-02 00:00:00 | 2023-02-19 00:00:00 | 31950 | 32022 |
+| Pre Season | 1,536 | 1,536 | 2005-10-10 00:00:00 | 2022-10-14 00:00:00 | 12005 | 12022 |
+
+### Latest Games
+
+| game_id | game_date | season_id | season_type | matchup_home | wl_home | matchup_away | wl_away |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0042200405 | 2023-06-12 00:00:00 | 42022 | Playoffs | DEN vs. MIA | W | MIA @ DEN | L |
+| 0042200404 | 2023-06-09 00:00:00 | 42022 | Playoffs | MIA vs. DEN | L | DEN @ MIA | W |
+| 0042200403 | 2023-06-07 00:00:00 | 42022 | Playoffs | MIA vs. DEN | L | DEN @ MIA | W |
+| 0042200402 | 2023-06-04 00:00:00 | 42022 | Playoffs | DEN vs. MIA | L | MIA @ DEN | W |
+| 0042200401 | 2023-06-01 00:00:00 | 42022 | Playoffs | DEN vs. MIA | W | MIA @ DEN | L |
+
+### Date Ranges By Table
+
+| table | date basis | rows | distinct_games | min_date_or_season | max_date_or_season | notes |
+| --- | --- | ---: | ---: | --- | --- | --- |
+| `game` | game_date | 65,698 | 65642 | 1946-11-01 00:00:00 | 2023-06-12 00:00:00 |  |
+| `game_info` | game_date | 58,053 | 58013 | 1946-11-01 00:00:00 | 2023-06-12 00:00:00 |  |
+| `game_summary` | game_date_est | 58,110 | 58021 | 1946-11-01 00:00:00 | 2023-06-12 00:00:00 |  |
+| `line_score` | game_date_est | 58,053 | 58013 | 1946-11-01 00:00:00 | 2023-06-12 00:00:00 |  |
+| `play_by_play` | joined game.game_date | 13,592,899 | 29818 | 1996-11-01 00:00:00 | 2023-06-09 00:00:00 | Latest play-by-play is one game date earlier than latest game-level data. |
+| `inactive_players` | joined game.game_date | 110,191 | 20312 | 1996-11-05 00:00:00 | 2023-06-12 00:00:00 |  |
+| `officials` | joined game.game_date | 70,971 | 23575 | 1996-11-08 00:00:00 | 2023-06-12 00:00:00 |  |
+| `other_stats` | joined game.game_date | 28,271 | 28261 | 1996-11-01 00:00:00 | 2023-06-09 00:00:00 |  |
+| `draft_history` | season | 8,257 |  | 1947 | 2023 |  |
+| `draft_combine_stats` | season | 1,633 |  | 2000 | 2023 |  |
+
+### Other Recency Signals
+
+- `player` active flags: `is_active=0`: 4,280, `is_active=1`: 535.
+- `common_player_info` spans `from_year` 1946-2022, `to_year` 1946-2023, and drafted-player `draft_year` 1947-2022.
+- `game` has 56 duplicate `game_id` rows, primarily from both `All-Star` and `All Star` season type labels for the same All-Star games.
+
 ## Tables
 
 ### `common_player_info`

@@ -74,6 +74,173 @@ def indexes(conn: sqlite3.Connection, table_name: str):
     return conn.execute(f"PRAGMA index_list({quote_ident(table_name)})").fetchall()
 
 
+def add_data_recency_section(conn: sqlite3.Connection, lines: list[str]) -> None:
+    lines.extend([
+        "",
+        "## Data Recency",
+        "",
+        "The database is current through the 2022-23 NBA season at the game level. "
+        "Game-level tables include the 2023 NBA Finals through June 12, 2023, while "
+        "`play_by_play` currently stops at June 9, 2023.",
+        "",
+        "### Game Coverage",
+        "",
+        "| season_type | rows | games | min_date | max_date | min_season_id | max_season_id |",
+        "| --- | ---: | ---: | --- | --- | --- | --- |",
+    ])
+
+    for row in conn.execute(
+        """
+        SELECT season_type, COUNT(*) rows, COUNT(DISTINCT game_id) games,
+               MIN(game_date) min_date, MAX(game_date) max_date,
+               MIN(season_id) min_season_id, MAX(season_id) max_season_id
+        FROM game
+        GROUP BY season_type
+        ORDER BY max_date DESC
+        """
+    ):
+        season_type, rows, games, min_date, max_date, min_season_id, max_season_id = row
+        lines.append(
+            f"| {season_type} | {rows:,} | {games:,} | {min_date} | {max_date} | "
+            f"{min_season_id} | {max_season_id} |"
+        )
+
+    lines.extend([
+        "",
+        "### Latest Games",
+        "",
+    ])
+    columns, rows = fetch_rows(
+        conn,
+        """
+        SELECT game_id, game_date, season_id, season_type, matchup_home, wl_home, matchup_away, wl_away
+        FROM game
+        ORDER BY game_date DESC, game_id DESC
+        LIMIT 5
+        """,
+        limit=5,
+    )
+    lines.append(markdown_table(columns, rows))
+
+    lines.extend([
+        "",
+        "### Date Ranges By Table",
+        "",
+        "| table | date basis | rows | distinct_games | min_date_or_season | max_date_or_season | notes |",
+        "| --- | --- | ---: | ---: | --- | --- | --- |",
+    ])
+
+    recency_rows = [
+        ("game", "game_date", "SELECT COUNT(*), COUNT(DISTINCT game_id), MIN(game_date), MAX(game_date) FROM game", ""),
+        ("game_info", "game_date", "SELECT COUNT(*), COUNT(DISTINCT game_id), MIN(game_date), MAX(game_date) FROM game_info", ""),
+        ("game_summary", "game_date_est", "SELECT COUNT(*), COUNT(DISTINCT game_id), MIN(game_date_est), MAX(game_date_est) FROM game_summary", ""),
+        ("line_score", "game_date_est", "SELECT COUNT(*), COUNT(DISTINCT game_id), MIN(game_date_est), MAX(game_date_est) FROM line_score", ""),
+        (
+            "play_by_play",
+            "joined game.game_date",
+            """
+            WITH game_dates AS (
+                SELECT game_id, MIN(game_date) game_date
+                FROM game
+                GROUP BY game_id
+            )
+            SELECT COUNT(*), COUNT(DISTINCT p.game_id), MIN(g.game_date), MAX(g.game_date)
+            FROM play_by_play p
+            LEFT JOIN game_dates g ON p.game_id = g.game_id
+            """,
+            "Latest play-by-play is one game date earlier than latest game-level data.",
+        ),
+        (
+            "inactive_players",
+            "joined game.game_date",
+            """
+            WITH game_dates AS (
+                SELECT game_id, MIN(game_date) game_date
+                FROM game
+                GROUP BY game_id
+            )
+            SELECT COUNT(*), COUNT(DISTINCT i.game_id), MIN(g.game_date), MAX(g.game_date)
+            FROM inactive_players i
+            LEFT JOIN game_dates g ON i.game_id = g.game_id
+            """,
+            "",
+        ),
+        (
+            "officials",
+            "joined game.game_date",
+            """
+            WITH game_dates AS (
+                SELECT game_id, MIN(game_date) game_date
+                FROM game
+                GROUP BY game_id
+            )
+            SELECT COUNT(*), COUNT(DISTINCT o.game_id), MIN(g.game_date), MAX(g.game_date)
+            FROM officials o
+            LEFT JOIN game_dates g ON o.game_id = g.game_id
+            """,
+            "",
+        ),
+        (
+            "other_stats",
+            "joined game.game_date",
+            """
+            WITH game_dates AS (
+                SELECT game_id, MIN(game_date) game_date
+                FROM game
+                GROUP BY game_id
+            )
+            SELECT COUNT(*), COUNT(DISTINCT s.game_id), MIN(g.game_date), MAX(g.game_date)
+            FROM other_stats s
+            LEFT JOIN game_dates g ON s.game_id = g.game_id
+            """,
+            "",
+        ),
+        ("draft_history", "season", "SELECT COUNT(*), 0, MIN(season), MAX(season) FROM draft_history", ""),
+        ("draft_combine_stats", "season", "SELECT COUNT(*), 0, MIN(season), MAX(season) FROM draft_combine_stats", ""),
+    ]
+
+    for table_name, basis, query, notes in recency_rows:
+        rows, distinct_games, min_value, max_value = conn.execute(query).fetchone()
+        lines.append(
+            f"| `{table_name}` | {basis} | {rows:,} | "
+            f"{distinct_games if distinct_games else ''} | {min_value} | {max_value} | {notes} |"
+        )
+
+    active_counts = conn.execute(
+        "SELECT is_active, COUNT(*) FROM player GROUP BY is_active ORDER BY is_active"
+    ).fetchall()
+    active_text = ", ".join(f"`is_active={flag}`: {count:,}" for flag, count in active_counts)
+    lines.extend([
+        "",
+        "### Other Recency Signals",
+        "",
+        f"- `player` active flags: {active_text}.",
+    ])
+
+    from_year, max_from_year, min_to_year, max_to_year, min_draft_year, max_draft_year = conn.execute(
+        """
+        SELECT MIN(from_year), MAX(from_year), MIN(to_year), MAX(to_year),
+               MIN(draft_year), MAX(draft_year)
+        FROM common_player_info
+        WHERE draft_year != 'Undrafted'
+        """
+    ).fetchone()
+    lines.append(
+        "- `common_player_info` spans "
+        f"`from_year` {from_year:g}-{max_from_year:g}, "
+        f"`to_year` {min_to_year:g}-{max_to_year:g}, and drafted-player `draft_year` "
+        f"{min_draft_year}-{max_draft_year}."
+    )
+
+    duplicate_rows = conn.execute(
+        "SELECT COUNT(*) - COUNT(DISTINCT game_id) FROM game"
+    ).fetchone()[0]
+    lines.append(
+        f"- `game` has {duplicate_rows} duplicate `game_id` rows, primarily from both "
+        "`All-Star` and `All Star` season type labels for the same All-Star games."
+    )
+
+
 def analyze_database(db_path: Path, sample_rows: int) -> str:
     conn = sqlite3.connect(db_path)
     try:
@@ -113,6 +280,8 @@ def analyze_database(db_path: Path, sample_rows: int) -> str:
             lines.append(
                 f"| `{table_name}` | {grain} | {row_count:,} | {len(columns)} | {len(fks)} | {len(idxs)} |"
             )
+
+        add_data_recency_section(conn, lines)
 
         lines.extend(["", "## Tables", ""])
 
