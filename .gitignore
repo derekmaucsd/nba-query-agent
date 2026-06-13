@@ -1,4 +1,5 @@
 /csv/
 /nba.sqlite
 /dataset_parts/
-/reports/
+/reports/*
+!/reports/sqlite_eda.md
