@@ -12,19 +12,20 @@ Natural-language NBA analytics agent: plain-English questions → SQL → valida
 
 | # | Deliverable | Owner(s) | Due |
 |---|-------------|----------|-----|
-| 1 | [Development environment](#1-development-environment) | Derek, Darren ✅ | **Sat, Jun 13** |
-| 2 | [NBA data source](#2-nba-data-source) | Darren | **Fri, Jun 12** |
+| 1 | [Development environment](#1-development-environment) | Derek ✅, Darren ✅ | **Sat, Jun 13** |
+| 2 | [NBA data source](#2-nba-data-source) | Darren ✅ | **Fri, Jun 12** |
 | 3 | [Format this doc](#3-format-this-doc) | Darren ✅ | **Fri, Jun 12** |
-| 4 | [SQL proof of concept + schema](#4-sql-proof-of-concept--schema) | Derek | **Wed, Jun 17** |
+| 4 | [Design and debate data infrastructure](#4-design-and-debate-data-infrastructure) | Derek, Darren |  |
+| 5 | [Write 15–20 example QTs as validation data](#5-write-1520-example-qts-as-validation-data) | Darren ✅ |  |
 
-### 1. Development Environment
+### 1. Development Environment ✅
 
 **Goal:** Align on a shared coding + AI development environment.
 
 - **Decision:** VS Code + Claude Code
 - **Requirement:** Everyone uses the same setup
 
-### 2. NBA Data Source
+### 2. NBA Data Source ✅
 
 **Goal:** Find a usable NBA database for the project.
 
@@ -38,12 +39,22 @@ Natural-language NBA analytics agent: plain-English questions → SQL → valida
 
 **Goal:** Publish a clear, shareable project plan in the repository.
 
-### 4. SQL Proof of Concept + Schema
+### 4. Design and Debate Data Infrastructure
 
-**Goal:** Prove the data layer works and document it for the agent.
+**Goal:** Thoroughly consider the best tables and relations for the project, based on the Kaggle tables and other relevant NBA data.
 
-- [ ] Run a successful SQL query against the chosen NBA database
-- [ ] Write a schema description for the agent (table names, columns, relationships, example values)
+- [ ] Tech spec for design
+- [ ] Answer Postgres vs. SQLite vs. etc.
+- [ ] Write down what tables and relations are used for what
+- [ ] Debate and fully come to agreement on the final design
+
+### 5. Write 15–20 Example QTs as Validation Data ✅
+
+**Goal:** Build a validation set of example questions to test the agent against.
+
+- [ ] Draft 15–20 representative NBA questions
+- [ ] Check each is answerable against the chosen schema
+- [ ] Record expected results for validation
 
 ---
 
@@ -53,11 +64,27 @@ Natural-language NBA analytics agent: plain-English questions → SQL → valida
 
 | # | Deliverable | Description |
 |---|-------------|-------------|
-| 5 | SQL generation | Python function: plain-English question → SQL query (Claude API + schema as system prompt) |
-| 6 | Query validation & execution | Validate SQL with `sqlglot`, execute read-only against SQLite, enforce row limit, return a DataFrame |
-| 7 | Result analysis | Second Claude call: query results → 2–3 sentence plain-English summary |
+| 6 | Write & execute DB setup script | Create the database infrastructure from the DB design doc, then load and verify data |
+| 7 | SQL proof of concept + schema | Run a successful query against the NBA database; write a schema description for the agent |
+| 8 | SQL generation | Python function: plain-English question → SQL query (Claude API + schema as system prompt) |
+| 9 | Query validation & execution | Validate SQL with `sqlglot`, execute read-only against SQLite, enforce row limit, return a DataFrame |
+| 10 | Result analysis | Second Claude call: query results → 2–3 sentence plain-English summary |
 
-### 5. SQL Generation Function
+### 6. Write and Execute DB Setup Script
+
+**Goal:** Create the database infrastructure (from the DB design doc) for data to be pulled from.
+
+- [ ] Run a successful SQL query
+- [ ] Confirm the loaded data is accurate
+
+### 7. SQL Proof of Concept + Schema
+
+**Goal:** Prove the data layer works and document it for the agent.
+
+- [ ] Run a successful SQL query against the chosen NBA database
+- [ ] Write a schema description for the agent (table names, columns, relationships, example values)
+
+### 8. SQL Generation Function
 
 ```python
 def generate_sql(question: str, schema: str) -> str:
@@ -67,14 +94,14 @@ def generate_sql(question: str, schema: str) -> str:
 - Uses Claude API
 - Schema description passed as system prompt
 
-### 6. Query Validation & Execution
+### 9. Query Validation & Execution
 
 - Validate generated SQL with **sqlglot**
 - Execute read-only against the SQLite database
 - Enforce a row limit
 - Return results as a **pandas DataFrame**
 
-### 7. Result Analysis Function
+### 10. Result Analysis Function
 
 - Second Claude API call
 - Input: query results
@@ -88,10 +115,10 @@ def generate_sql(question: str, schema: str) -> str:
 
 | # | Deliverable | Description |
 |---|-------------|-------------|
-| 8 | Wire full pipeline | Connect Deliverables 5–7 into one function: question in → SQL, results, summary out. Test with 5 NBA questions. |
-| 9 | FastAPI endpoint | `POST /query` — accepts a plain-English question; returns SQL, result rows, column names, and summary as JSON |
+| 11 | Wire full pipeline | Connect Deliverables 8–10 into one function: question in → SQL, results, summary out. Test with 5 NBA questions. |
+| 12 | FastAPI endpoint | `POST /query` — accepts a plain-English question; returns SQL, result rows, column names, and summary as JSON |
 
-### 8. Wire the Full Pipeline
+### 11. Wire the Full Pipeline
 
 **Single function signature (conceptual):**
 
@@ -106,7 +133,7 @@ def ask(question: str) -> dict:
 2. Which team had the best home record in the 2022 playoffs?
 3. *(Add 3 more representative questions)*
 
-### 9. FastAPI Endpoint
+### 12. FastAPI Endpoint
 
 ```
 POST /query
@@ -135,9 +162,9 @@ POST /query
 
 | # | Deliverable | Description |
 |---|-------------|-------------|
-| 10 | UI (Claude artifact) | Text input, generated SQL display, auto-selected Recharts chart, data table, summary paragraph |
+| 13 | UI (Claude artifact) | Text input, generated SQL display, auto-selected Recharts chart, data table, summary paragraph |
 
-### 10. Frontend UI
+### 13. Frontend UI
 
 Claude artifact with:
 

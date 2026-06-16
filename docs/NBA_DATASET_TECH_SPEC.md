@@ -113,11 +113,11 @@ There is no clear limit to the data returned, but it is also not paginated.
   - 30 teams
   - 4800+ players
   - 65,000+ games (every game since the inaugural 1946-47 NBA season)
-  - Box Scores for over 95% of all games
+  - Team Box Scores for over 95% of all games
   - Play-by-Play game data with 13M+ rows of Play-by-Play data in all!
 - **Last Updated:** 2023
 
-This is the one that's already SQL. A ready-made SQLite file with ~30 tables covering games, box scores, play-by-play, players, teams, drafts, and standings from 1946–present, sourced from the same NBA API. Perfect for instantly pointing a SQL generator at, but it's a periodic snapshot — not live. Best used as your historical base, topped up by nba_api for recency.
+This is the one that's already SQL. A ready-made SQLite file with 16 tables covering games, box scores, play-by-play, players, teams, drafts, and standings from 1946–2023, sourced from the same NBA API. Perfect for instantly pointing a SQL generator at, but it's a periodic snapshot — not live. Best used as your historical base, topped up by nba_api for recency.
 
 ### Option 3: BALLDONTLIE
 
@@ -179,7 +179,7 @@ If you'd like, I can scaffold the ETL: a schema + a Python loader that pulls fro
 
 The end goal is a local relational database (Postgres/SQLite) that a SQL generator queries, rather than hitting live APIs per question. Two data sources feed it:
 
-1. Kaggle "Basketball" SQLite DB (Wyatt Walsh) — the historical backbone. ~2.35 GB, ~30 tables, every game since 1946-47, box scores for 95%+ of games, 13M+ play-by-play rows. Already SQL, but a static snapshot ending 2023.
+1. Kaggle "Basketball" SQLite DB (Wyatt Walsh) — the historical backbone. ~2.35 GB, 16 tables, every game since 1946-47, box scores for 95%+ of games, 13M+ play-by-play rows. Already SQL, but a static snapshot ending 2023.
 2. nba_api — the recency/live layer. Same source NBA.com runs on, updates within seconds during games. Used to backfill 2023→2026 and then keep the DB current.
 
 ## Design Choices
@@ -193,7 +193,7 @@ Two hard limits of the raw APIs drove this decision:
 
 ### How We Tackle Live Data
 
-we want to have a bot make regular generic calls to the NBA API endpoint during live games to update entries in our local SQL tables. We will first start our local SQL table from Kaggle which ranges from about 1950 to 2023. Then we can backfill with data from 2023 to 2026. Finally, we can work on a bot that will know when games are live and continue making live calls to NBA API.
+we want to have a bot make regular generic calls to the NBA API endpoint during live games to update entries in our local SQL tables. We will first start our local SQL table from Kaggle which ranges from about 1946 to 2023. Then we can backfill with data from 2023 to 2026. Finally, we can work on a bot that will know when games are live and continue making live calls to NBA API.
 
 For scaling, we can use paid APIs that update their information quicker and are more reliable than NBA API.
 
@@ -203,11 +203,13 @@ we need to fully understand the Kaggle DB and then the associated API-NBA calls 
 
 ### How We Want to Create Our Relational DB Infrastructure
 
-Need to work on this once we have a good idea of what Kaggle returns
+Need to work on this once we have a good idea of what Kaggle returns. Then, we need to map out
+what tables we think are appropriate based on Kaggle and actual NBA data. Finally, we need to 
+write the design doc and create this Database.
 
 ### Rollout Sequence (Live-Data Strategy)
 
-1. Seed the local DB from Kaggle (~1950–2023).
+1. Seed the local DB from Kaggle (1946–2023).
 2. Backfill 2023→2026 via nba_api.
 3. Build a bot that detects when games are live and makes regular calls to the NBA API to update local tables in near-real-time.
 4. Scale later with paid APIs (e.g. API-NBA, ~$15–35/mo) for faster, more reliable updates — and for the one real gap, clean injury data, which nba_api doesn't provide first-class.
@@ -220,22 +222,69 @@ Need to work on this once we have a good idea of what Kaggle returns
 
 ---
 
-*updated by Darren Lee*
-*Last updated: 6/12/2026*
+## Open Questions & Review Responses
+
+Issues raised in review (grounded against the real schema in `reports/sqlite_eda.md`), with our current thinking on each.
+
+### Join keys don't join cleanly
+
+The schema isn't as relational as it looks. `game.team_id_home` is `TEXT`, `common_player_info.team_id` is `INTEGER`, `team.id` is `TEXT`, and `play_by_play.player1_team_id` is stored as a float-formatted string (`"1610612747.0"`, EDA line 543) vs. `team.id = "1610612737"`. A generated `JOIN ... ON team_id = id` silently returns nothing. The spec treats this as a clean relational schema; it isn't.
+
+**Our take:**
+
+- Have the agent handle it (cast in the generated SQL).
+- Or write a script to cast the table schema — though the approach depends on the SQL DB used.
+
+### No target question set or eval harness
+
+There is no list of the 15–20 questions the generator must answer and no eval/accuracy harness. Without it you can't know whether the schema is sufficient — and you'd have caught the 20–25-points failure on day one.
+
+### Scope: historical analytics or live scores?
+
+These pull in opposite directions. The hard part of "live" is a player-grain ingestion pipeline, but the marquee examples are multi-season historical. Which is v1?
+
+**Our take:**
+
+- Address later — first, only historical data.
+
+### Dedup / idempotency
+
+There are already 56 duplicate `game_id`s (EDA line 71). Backfill + a live bot re-polling the same game will multiply duplicates. What's the upsert key and watermark? (Note `play_by_play` already lags `game` by 3 days within Kaggle itself — EDA line 60 — so "complete after ingest" needs a definition.)
+
+**Our take:**
+
+- Have the agent handle it.
+- Maybe try to script and rewrite the data?
+
+### SQLite vs. Postgres — decided how?
+
+Lines 167 and 180 keep both. A live single-writer ingestion bot + concurrent reads on a 2.35 GB-and-growing file is exactly where SQLite's single-writer model bites. This decision gates the bot design and shouldn't be deferred.
+
+### `season_id` encoding
+
+The generator must know `2YYYY` = regular, `4YYYY` = playoffs, `3YYYY` = all-star, `1YYYY` = preseason, plus the `"All-Star"` vs. `"All Star"` label split (EDA lines 36–40, 71). This semantic layer is undocumented.
+
+**Our take:**
+
+- Keep this in mind.
+
+### Coverage cliffs
+
+`other_stats` and `play_by_play` only exist for ~28–30k games (1996+). Any "points in the paint," "fast-break points," or play-by-play question is unanswerable pre-1996. The design should surface these cliffs, not imply uniform 1946–present depth.
+
+**Our take:**
+
+- A disclaimer should be added for the user.
+
+### Licensing / ToS
+
+Redistributing stats.nba.com data and scraping it via a bot may violate NBA's terms. The spec only raises cost (for Sportradar), never legality of the free path.
+
+**Our take:**
+
+- Keep in mind.
 
 ---
 
-Be honest and critical of the docs/NBA_DATASET_TECH_SPEC.md file. Ask pressing questions of what we might have missed/not considered in this tech spec. Point out any logical inconsistencies in the doc.
-
-
-Read the spec and grounded the critique against the real schema in reports/sqlite_eda.md (the 16-table, 2.35 GB Kaggle nba.sqlite).
-
-The headline finding: The spec's flagship example — "every NBA player who scored 20–25 points across 2012–2015" — isn't supported by the Kaggle DB at all. There's no player-per-game box score table; game is team-level only. Player points could only be reconstructed from play_by_play (starts 1996, covers ~29.8k of 65.7k games), or pulled from nba_api's LeagueDashPlayerStats — which inverts the stated "Kaggle = backbone, nba_api = backfill" architecture.
-
-Other issues I raised:
-- 6 logical inconsistencies — e.g. "already SQL / query-ready" vs. a DB with zero indexes/FKs and all-nullable TEXT columns; mismatched key types that break joins silently (team_id INTEGER vs TEXT, float-formatted IDs); empty team_info_common despite "standings" claims; the pagination justification being self-contradictory; 1950 vs 1946 date span; injuries over-emphasized.
-- Open questions — no target query set / eval harness; historical-analytics vs live-scores scope creep; nba_api→schema mapping (the real hard work, parked as "open"); idempotency/dedup/watermark (you already have 56 dup game_ids); stat corrections; SQLite vs Postgres undecided; rate-limit/ban plan; season_id encoding semantics; licensing.
-
-My recommended next steps before any ETL: (1) write 15–20 concrete target questions, (2) check each against the real schema, (3) decide where player-grain stats come from, (4) resolve SQLite vs Postgres.
-
-I ended by offering to either turn the critique into a revised spec, or draft that target-query list and validate each question against the actual schema.
+*updated by Darren Lee*
+*Last updated: 6/15/2026*
