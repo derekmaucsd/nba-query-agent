@@ -28,3 +28,19 @@ Run a quick schema and sample-data report with:
 ```powershell
 python scripts\eda_sqlite.py --db nba.sqlite --out reports\sqlite_eda.md
 ```
+
+## Gemini Setup
+
+Create a local `.env` file in the repo root and add your API key:
+
+```text
+GEMINI_API_KEY=your_key_here
+```
+
+Then run the agent:
+
+```powershell
+python nba_agent.py --question "How many games were there total in the NBA?"
+```
+
+The script will read `.env` automatically. Do not commit that file.

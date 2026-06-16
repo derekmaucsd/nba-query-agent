@@ -3,3 +3,5 @@
 /dataset_parts/
 /reports/*
 !/reports/sqlite_eda.md
+__pycache__/
+.env
